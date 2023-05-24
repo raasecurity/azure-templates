@@ -3,13 +3,13 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "adminUsername": {
-            "value": "## TO BE DEFINED ##"
+            "value": "frank"
         },
         "adminPassword": {
-            "value": "## TO BE DEFINED ##"
+            "value": "Fortinet123!"
         },
         "fortiGateNamePrefix": {
-            "value": "## TO BE DEFINED ##"
+            "value": "RAA"
         },
         "fortiGateImageSKU": {
             "value": "fortinet_fg-vm"
@@ -30,10 +30,10 @@
             "value": "new"
         },
         "publicIPName": {
-            "value": ""
+            "value": "pip01"
         },
         "publicIPResourceGroup": {
-            "value": ""
+            "value": "learn-82401025-1e03-4cbc-a841-e8841191f120"
         },
         "publicIPAddressType": {
             "value": "Static"
@@ -42,10 +42,10 @@
             "value": "new"
         },
         "vnetName": {
-            "value": ""
+            "value": "RAA-VNET01"
         },
         "vnetResourceGroup": {
-            "value": ""
+            "value": "learn-82401025-1e03-4cbc-a841-e8841191f120"
         },
         "vnetAddressPrefix": {
             "value": "172.16.136.0/22"
