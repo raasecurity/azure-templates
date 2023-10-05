@@ -15,8 +15,8 @@ param (
 
 BeforeAll {
     $templateName = "Active-Active-ELB-ILB"
-    $sourcePath = "$env:BUILD_SOURCESDIRECTORY\FortiGate\$templateName"
-    $scriptPath = "$env:BUILD_SOURCESDIRECTORY\FortiGate\$templateName\test"
+    $sourcePath = "$env:GITHUB_WORKSPACE\FortiGate\$templateName"
+    $scriptPath = "$env:GITHUB_WORKSPACE\FortiGate\$templateName\test"
     $templateFileName = "azuredeploy.json"
     $templateFileLocation = "$sourcePath\$templateFileName"
     $templateParameterFileName = "azuredeploy.parameters.json"
@@ -33,12 +33,12 @@ BeforeAll {
     $config = "config system global `n set gui-theme mariner `n end `n config system admin `n edit devops `n set accprofile super_admin `n set ssh-public-key1 `""
     $config += Get-Content $sshkeypub
     $config += "`" `n set password $testsResourceGroupName `n next `n end"
-    $publicIPName = "$testsPrefix-FGT-PIP"
+    $publicIP1Name = "$testsPrefix-FGT-PIP"
     $params = @{ 'adminUsername'=$testsAdminUsername
                  'adminPassword'=$testsResourceGroupName
                  'fortiGateNamePrefix'=$testsPrefix
-                 'fortiGateAditionalCustomData'=$config
-                 'publicIPName'=$publicIPName
+                 'fortiGateAdditionalCustomData'=$config
+                 'publicIP1Name'=$publicIP1Name
                }
     $ports = @(40030, 50030, 40031, 50031)
 }
@@ -56,6 +56,7 @@ Describe 'FGT A/A' {
         It 'Converts from JSON and has the expected properties' {
             $expectedProperties = '$schema',
             'contentVersion',
+            'outputs',
             'parameters',
             'resources',
             'variables'
@@ -86,7 +87,8 @@ Describe 'FGT A/A' {
             $expectedTemplateParameters = 'acceleratedNetworking',
                                           'adminPassword',
                                           'adminUsername',
-                                          'fortiGateAditionalCustomData',
+                                          'availabilityOptions',
+                                          'fortiGateAdditionalCustomData',
                                           'fortiGateImageSKU',
                                           'fortiGateImageVersion',
                                           'fortiGateLicenseBYOLA',
@@ -100,9 +102,10 @@ Describe 'FGT A/A' {
                                           'fortinetTags',
                                           'instanceType',
                                           'location',
-                                          'publicIPName',
-                                          'publicIPNewOr-Existing',
-                                          'publicIPResourceGroup',
+                                          'publicIP1Name',
+                                          'publicIP1NewOrExisting',
+                                          'publicIP1ResourceGroup',
+                                          'serialConsole',
                                           'subnet1Name',
                                           'subnet1Prefix',
                                           'subnet1StartAddress',
@@ -113,7 +116,7 @@ Describe 'FGT A/A' {
                                           'subnet3Prefix',
                                           'vnetAddressPrefix',
                                           'vnetName',
-                                          'vnetNewOr-Existing',
+                                          'vnetNewOrExisting',
                                           'vnetResourceGroup'
             $templateParameters = (get-content $templateFileLocation | ConvertFrom-Json -ErrorAction SilentlyContinue).Parameters | Get-Member -MemberType NoteProperty | % Name | sort
             $templateParameters | Should -Be $expectedTemplateParameters
@@ -125,10 +128,10 @@ Describe 'FGT A/A' {
 
         It "Test deployment" {
             New-AzResourceGroup -Name $testsResourceGroupName -Location "$testsResourceGroupLocation"
-            (Test-AzResourceGroupDeployment -ResourceGroupName "$testsResourceGroupName" -TemplateFile "$templateFileName" -TemplateParameterObject $params).Count | Should -Not -BeGreaterThan 0
+            (Test-AzResourceGroupDeployment -ResourceGroupName "$testsResourceGroupName" -TemplateFile "$templateFileLocation" -TemplateParameterObject $params).Count | Should -Not -BeGreaterThan 0
         }
         It "Deployment" {
-            $resultDeployment = New-AzResourceGroupDeployment -ResourceGroupName "$testsResourceGroupName" -TemplateFile "$templateFileName" -TemplateParameterObject $params
+            $resultDeployment = New-AzResourceGroupDeployment -ResourceGroupName "$testsResourceGroupName" -TemplateFile "$templateFileLocation" -TemplateParameterObject $params
             Write-Host ($resultDeployment | Format-Table | Out-String)
             Write-Host ("Deployment state: " + $resultDeployment.ProvisioningState | Out-String)
             $resultDeployment.ProvisioningState | Should -Be "Succeeded"
@@ -143,13 +146,13 @@ Describe 'FGT A/A' {
     Context 'Deployment test' {
 
         BeforeAll {
-            $fgt = (Get-AzPublicIpAddress -Name $publicIPName -ResourceGroupName $testsResourceGroupName).IpAddress
+            $fgt = (Get-AzPublicIpAddress -Name $publicIP1Name -ResourceGroupName $testsResourceGroupName).IpAddress
             Write-Host ("FortiGate public IP: " + $fgt)
-            chmod 400 $sshkey
             $verify_commands = @'
             config system console
             set output standard
             end
+            get system status
             show system interface
             show router static
             diag debug cloudinit show
@@ -166,11 +169,15 @@ Describe 'FGT A/A' {
         }
         It "FGT A: Verify configuration" {
             $result = $verify_commands | ssh -p 50030 -tt -i $sshkey -o StrictHostKeyChecking=no devops@$fgt
-            Write-Host ("Config: " + $result) -Separator `n
+            $LASTEXITCODE | Should -Be "0"
+            Write-Host ("FGT CLI info: " + $result) -Separator `n
+            $result | Should -Not -BeLike "*Command fail*"
         }
         It "FGT B: Verify configuration" {
             $result = $verify_commands | ssh -p 50031 -tt -i $sshkey -o StrictHostKeyChecking=no devops@$fgt
-            Write-Host ("Config: " + $result) -Separator `n
+            $LASTEXITCODE | Should -Be "0"
+            Write-Host ("FGT CLI info: " + $result) -Separator `n
+            $result | Should -Not -BeLike "*Command fail*"
         }
     }
 

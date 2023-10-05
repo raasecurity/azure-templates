@@ -4,7 +4,7 @@ After deployment, the below configuration has been automatically injected during
 
 ## FortiGate A
 
-<pre>
+<pre><code>
 config system sdn-connector
   edit AzureSDN
     set type azure
@@ -44,19 +44,19 @@ config system interface
   next
   edit port2
     set mode static
-    set ip <b>172.16.136.69/24</b>
+    set ip <b>172.16.136.69/26</b>
     set description internal
     set allowaccess probe-response
   next
   edit port3
     set mode static
-    set ip <b>172.16.136.133/24</b>
+    set ip <b>172.16.136.133/26</b>
     set description hasyncport
   next
   edit port4
     set mode static
-    set ip <b>172.16.136.197/24</b>
-    set description management
+    set ip <b>172.16.136.197/26</b>
+    set description hammgmtport
     set allowaccess ping https ssh ftm
   next
 end
@@ -78,11 +78,11 @@ config system ha
   set unicast-hb enable
   set unicast-hb-peerip <b>172.16.136.134</b>
 end
-</pre>
+</code></pre>
 
 ## FortiGate B
 
-<pre>
+<pre><code>
 config system sdn-connector
   edit AzureSDN
     set type azure
@@ -134,7 +134,7 @@ config system interface
   edit port4
     set mode static
     set ip <b>172.16.136.198/26</b>
-    set description management
+    set description hammgmtport
     set allowaccess ping https ssh ftm
   next
 end
@@ -156,5 +156,4 @@ config system ha
   set unicast-hb enable
   set unicast-hb-peerip <b>172.16.136.133</b>
 end
-
-</pre>
+</code></pre>
